@@ -8,6 +8,9 @@ authors:
     affiliation: "Independent Researcher"
     # orcid: "https://orcid.org/YOUR-ORCID-ID" # Uncomment and add your ORCID if you have one
 date-released: 2026-09-08
+identifiers:
+  - type: doi
+    value: "10.5281/zenodo.22649425"
 url: "https://github.com/stormbreaker-mcu/indus-climate-ledger"
 repository-code: "https://github.com/stormbreaker-mcu/indus-climate-ledger"
 abstract: >
