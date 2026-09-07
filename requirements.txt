@@ -1,0 +1,5 @@
+# Replication package for "The Climate-Resilience Ledger" (JAS submission)
+# Python 3.9+ required.
+matplotlib>=3.7
+numpy>=1.23
+scipy>=1.10
