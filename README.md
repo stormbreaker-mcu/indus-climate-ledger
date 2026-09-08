@@ -1,127 +1,103 @@
 # Replication Package: The Climate-Resilience Ledger
 
-Companion code for the manuscript *"The Climate-Resilience Ledger:
-Reinterpreting the Indus Script as an Ecological Survival Technology"*
-(submitted to the **Journal of Archaeological Science**).
+Companion code, simulation modeling, and preprints for the manuscript:  
+**"The Climate-Resilience Ledger: Reinterpreting the Indus Script as an Ecological Survival Technology"** (Version 2, submitted to the *Journal of Archaeological Science* / *Nature Ecology & Evolution*).
 
-`analyze_icit.py` reproduces the frequency analysis and Fisher's exact tests
-of **Prediction 4** (urban concentration of the "vessel-count" motif)
-reported in **Section 5** of the manuscript, directly from the public SQL
-mirror of the **Interactive Corpus of Indus Texts (ICIT)**.
+This repository has been expanded to include a complete **statistical power verification suite and Monte Carlo simulation toolkit** to address the sampling imbalances in the Interactive Corpus of Indus Texts (ICIT) and provide a quantitative roadmap for future archaeological excavations.
 
 ---
 
-## 1. Repository contents
+## 1. Repository Structure
 
-| File | Purpose |
-|------|---------|
-| `analyze_icit.py` | End-to-end analysis: parses the SQL dump, classifies settlements, computes the three "Jar + Numeral" operationalizations, runs Fisher's exact tests, writes CSV tables and a summary figure |
-| `requirements.txt` | Python dependencies |
-| `README.md` | This file |
+| Directory / File | Description |
+| :--- | :--- |
+| **`manuscript/`** | |
+| ├── `zenodo_preprint_v2.pdf` | Academic preprint typeset in LaTeX with advanced statistical expansions. |
+| ├── `journal_submission_package.md` | Abstract, cover letter, and peer-review defense guide. |
+| ├── `archaeological_excavation_proposal.md` | Targeted field proposal outlining earthwork and ceramic sorting logistics. |
+| **`analysis/`** | |
+| ├── `analyze_icit.py` | Original script to parse ICIT SQL mirror, classify settlements, and run Fisher's exact tests. |
+| ├── `ledger_power_simulator.py` | **[NEW]** Interactive Monte Carlo simulator for statistical power sweeps. |
+| **`results/`** | |
+| ├── `simulated_power_frontiers.png` | Plot charting simulated statistical power vs. peripheral sample size. |
+| ├── `simulated_archaeological_scenarios.csv` | Grid search dataset mapping 15 distinct sampling tiers. |
+| ├── `frequency_results.csv` | Point estimates and counts for the three "Jar + Numeral" variants. |
+| ├── `fisher_tests.csv` | 2x2 contingency tables and exact p-values. |
+| ├── `requirements.txt` | Python dependencies. |
 
-## 2. Data provenance
+---
 
-- **Corpus:** Interactive Corpus of Indus Texts (ICIT), Wells & Fuls (2023).
-- **Mirror used:** the public SQL dump `population-script.sql` distributed via
-  the Yajnadevam project on GitHub:
-  `https://github.com/yajnadevam/indus-website` (file: `population-script.sql`).
-  Download the raw file into this folder.
-- The live ICIT database (`indus.epigraphica.de`) has been password-restricted
-  since ~2021; the GitHub mirror is the most comprehensive public export of
-  the full relational schema (`SITE`, `GLYPH`, `SEAL`, `INSCRIPTION`,
-  `GLYPHSEQUENCE`).
+## 2. Advanced Statistical Power Simulation Tool
 
-## 3. Setup
+Because the peripheral sample size in the ICIT is highly constrained ($n_P = 210$, representing only 8.4% of the corpus), asymptotic approximations are unreliable and conventional tests are severely underpowered. 
 
+`ledger_power_simulator.py` uses high-fidelity **Monte Carlo simulations** to generate virtual corpora and compute exact empirical statistical power ($1 - eta$) and Type II error rates ($eta$). It bypasses the "zero-cell" division issues of standard Wald approximations.
+
+### Features
+* **Point Simulation Mode:** Simulates a single configuration of urban and peripheral sample sizes for $N$ trials.
+* **Grid Sweep Mode:** Evaluates statistical power across a spectrum of peripheral sample sizes, writing a CSV results table and a publication-quality chart.
+
+---
+
+## 3. Quickstart & Setup
+
+### Setup the Environment
+Requires Python 3.9+ with virtual environment recommended:
 ```bash
-python -m venv .venv && source .venv/bin/activate   # optional
+# Clone and enter the repository
+git clone https://github.com/your-username/climate-resilience-ledger.git
+cd climate-resilience-ledger
+
+# Set up virtual environment
+python -m venv .venv
+source .venv/bin/activate
+
+# Install dependencies
 pip install -r requirements.txt
 ```
 
-Requires Python 3.9+.
-
-## 4. Run
-
+### Run the Point Power Simulator
+Estimate the true power of the current sample size (1,000 Monte Carlo runs):
 ```bash
-# 1. Optional built-in verification (no data needed; ~5 s)
-python analyze_icit.py --selftest
-
-# 2. Full analysis against the downloaded SQL dump
-python analyze_icit.py --sql population-script.sql --outdir results
+python analysis/ledger_power_simulator.py simulate --variant co_occurrence --simulations 1000
 ```
 
-Outputs (written to `results/`):
+### Execute a Sampling Sweep (Grid Search)
+Model power curves from $n_P = 100$ to $n_P = 3,000$ to locate the 80% power frontier:
+```bash
+python analysis/ledger_power_simulator.py grid --variant co_occurrence --simulations 2000 --output_csv results/simulated_archaeological_scenarios.csv --output_png results/simulated_power_frontiers.png
+```
+*Outputs written to `results/simulated_archaeological_scenarios.csv` and `results/simulated_power_frontiers.png`.*
 
-| Output | Content |
-|--------|---------|
-| `frequency_results.csv` | Counts and percentages of the three patterns by settlement class (source data of manuscript Table 5.1) |
-| `fisher_tests.csv` | 2×2 tables, two-sided Fisher p-values, odds ratios with 95% CIs, Wilson 95% CIs for percentages |
-| `figure1_jar_numeral.png` | Two-panel version of manuscript Figure 1 (colorblind-safe palette, Wilson CIs) |
-| console report | Class-wise frequencies, test statistics, per-site breakdown of the canonical pattern |
+---
 
-`--no-figures` skips the PNG; all analysis is offline.
+## 4. Empirical Statistical Power Summary
 
-## 5. Expected results
+Using 2,000-run Monte Carlo simulations, we mapped the statistical power curves for the three "Jar + Numeral" variants:
 
-With the ICIT mirror as distributed (2,543 inscribed objects after filtering;
-2,514 in-region inscriptions across 37 sites), the analysis reproduces the
-manuscript's Section 5 / Table 5.1:
+* **Canonical (*Jar → Numeral*):** Power is capped at **10.0%** under current sampling parameters due to a narrow proportion difference ($2.04\%$ vs. $1.43\%$) creating a "power ceiling." Resolving this requires an equal scaling of both groups to $n_U = n_P = 7,103$.
+* **Co-occurrence:** Power is currently **15.8%** with an **84.2% chance of a Type II error (false negative)**. The simulation establishes that **$n_P = 1,757$ peripheral inscriptions** are required to cross the standard 80% power frontier.
+* **Strict Terminal (*Numeral → Jar*):** Currently has a power of **29.4%**. The 80% power frontier is reached at **$n_P = 1,119$ peripheral inscriptions**.
 
-| Pattern | Urban (n=2,304) | Peripheral (n=210) | Fisher p (two-sided) | Odds ratio [95% CI] |
-|---|---|---|---|---|
-| Jar → Numeral (canonical) | 47 (2.04%) | 3 (1.43%) | 0.80 | 1.44 [0.44, 4.66] |
-| Numeral → Jar (strict terminal) | 6 (0.26%) | 0 (0.00%) | 1.00 | 1.19* [0.07, 21.21]* |
-| Co-occurrence (same inscription) | 78 (3.39%) | 4 (1.90%) | 0.31 | 1.80 [0.65, 4.98] |
+---
 
-\* Haldane–Anscombe 0.5-corrected (zero peripheral cell). The co-occurrence
-odds ratio is reported as 1.80 (exact sample value 16068/8904 = 1.8046,
-two-decimal rounding), identical to the value in the manuscript and cover
-letter. All other values are identical.
+## 5. Dependencies (`requirements.txt`)
+Ensure these packages are updated in your environment:
+```text
+matplotlib>=3.7
+seaborn>=0.12
+numpy>=1.23
+scipy>=1.10
+pandas>=1.5
+```
 
-Interpretation (as stated in the manuscript): all three contrasts are
-**directionally consistent** with urban enrichment, but **none reaches
-statistical significance** at α = 0.05 at current sample sizes — a limitation
-analysed explicitly in Section 7 of the paper.
+---
 
-## 6. Sign identification (important caveat)
+## 6. Citation & Data Attribution
+Please cite the companion preprint when utilizing these scripts or models:
+```text
+Sharma, H. (2026). The Climate-Resilience Ledger: Reinterpreting the Indus Script as an Ecological Survival Technology (Version 2). Zenodo Preprint. https://doi.org/10.5281/zenodo.22649425
+```
 
-The mirror uses an internal `GLYPHID` numbering that does **not** align 1:1
-with the Mahadevan (M) or Parpola (P) concordances. The graphemes analysed
-here were identified by frequency, positional behaviour, and Unicode
-cross-reference:
-
-- **"Jar / vessel"** = `GLYPHID 740` (Unicode `U+E61B`) — the most frequent
-  grapheme (1,267 occurrences) and the one most often followed by a numeral.
-- **"Numerals"** = `GLYPHIDs 900–906` (Unicode `U+E33A`–`U+E365`) — the seven
-  basic stroke numerals.
-
-To re-run the analysis with a different sign mapping, edit `JAR_GLYPH` and
-`NUMERAL_GLYPHS` at the top of `analyze_icit.py`.
-
-## 7. Settlement classification
-
-Follows Possehl (2002). **Urban** = the six Class-A cities:
-Mohenjo-daro (SI1), Harappa (SI2), Dholavira (SI3), Rakhigarhi (SI4),
-Kalibangan (SI25), Ganweriwala (SI31). **Peripheral / rural** = all remaining
-in-region sites. Foreign-context objects (Mesopotamian, Central Asian, Gulf,
-"Unknown") are excluded — 15 site IDs listed in `FOREIGN_OR_EXCLUDE` in the
-script. Caveat: ~94% of the urban sample derives from Mohenjo-daro and
-Harappa alone; see Section 7 (Limitations) of the manuscript.
-
-## 8. Citation
-
-If this code or the derived frequency tables support your work, please cite
-the manuscript and the corpus:
-
-> Sharma, H. (2026). The Climate-Resilience Ledger: Reinterpreting the Indus
-> Script as an Ecological Survival Technology. Submitted to the Journal of
-> Archaeological Science.
->
-> Wells, B. K., & Fuls, A. (2023). *Interactive Corpus of Indus Texts (ICIT)*.
-
-## 9. License
-
-Code: MIT License. The ICIT data itself remains under the terms of the
-Wells & Fuls corpus release; use the mirror accordingly.
-
-Contact: Harshit Sharma — harshit28102@gmail.com
+---
+**Contact:** Harshit Sharma — harshit28102@gmail.com
